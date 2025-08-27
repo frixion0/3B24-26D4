@@ -27,16 +27,21 @@ export async function POST(req: NextRequest) {
 
     if (text.startsWith('/start') || text.startsWith('/help')) {
       const welcomeMessage = `
-Hello! I'm TeleImage Bot. 🤖
+Hello there! I'm TeleImage Bot. 🤖
 
-Send me a text prompt and I'll generate an image for you.
+I can turn your text descriptions into beautiful images. It's easy to get started!
 
-For example, try sending:
-"A cute cat wearing a wizard hat"
-or
-"A futuristic city skyline at sunset, cinematic lighting"
+**How to use me:**
+Just send me a message with a description of the image you want to create.
 
-Let your imagination run wild!
+**For example, you could send:**
+- "A serene painting of a cherry blossom tree by a river"
+- "A futuristic cityscape with flying cars, neon lights, cinematic"
+- "A photorealistic image of a red panda wearing a tiny chef's hat"
+
+I'll get to work and send you back your unique creation. If I ever get stuck, I'll let you know.
+
+Let your imagination run wild! What would you like to create first?
       `;
       await sendMessage(chatId, welcomeMessage.trim());
       return NextResponse.json({ ok: true });
