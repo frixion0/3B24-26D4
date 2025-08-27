@@ -6,13 +6,48 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icons } from "@/components/icons";
+import { Input } from "@/components/ui/input";
+import { generateImage, GenerateImageInput } from "@/ai/flows/generate-image-from-telegram-prompt";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "./ui/skeleton";
 
 export function LandingPage() {
   const [year, setYear] = useState(new Date().getFullYear());
+  const [prompt, setPrompt] = useState("");
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setYear(new Date().getFullYear());
   }, []);
+
+  const handleGenerateImage = async () => {
+    if (!prompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a prompt.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoading(true);
+    setGeneratedImage(null);
+    try {
+      const input: GenerateImageInput = { prompt };
+      const result = await generateImage(input);
+      setGeneratedImage(result.imageDataUri);
+    } catch (error) {
+      console.error("Failed to generate image:", error);
+      toast({
+        title: "Image Generation Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background text-foreground">
@@ -43,9 +78,15 @@ export function LandingPage() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button size="lg" asChild>
+                    <Link href="#generate" prefetch={false}>
+                      <Icons.sparkles className="mr-2 h-5 w-5" />
+                      Try it on the Web
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="secondary" asChild>
                     <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
                       <Icons.bot className="mr-2 h-5 w-5" />
-                      Start Creating Now
+                      Use the Telegram Bot
                     </Link>
                   </Button>
                 </div>
@@ -62,12 +103,57 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="w-full bg-card py-12 md:py-24 lg:py-32">
+        <section id="generate" className="w-full bg-card py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="space-y-2">
+                    <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
+                    Generate an Image
+                    </h2>
+                    <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                    Enter a prompt below and watch the AI bring your vision to life.
+                    </p>
+                </div>
+            </div>
+            <div className="mx-auto mt-8 max-w-2xl">
+                <div className="flex gap-2">
+                    <Input
+                    type="text"
+                    placeholder="e.g., 'A majestic lion wearing a crown'"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleGenerateImage()}
+                    disabled={isLoading}
+                    />
+                    <Button onClick={handleGenerateImage} disabled={isLoading}>
+                        {isLoading ? 'Generating...' : 'Generate'}
+                    </Button>
+                </div>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              {isLoading && (
+                  <Skeleton className="h-[512px] w-[512px] rounded-lg" />
+              )}
+              {generatedImage && !isLoading && (
+                  <Image
+                  src={generatedImage}
+                  alt={prompt}
+                  width={512}
+                  height={512}
+                  className="rounded-lg object-contain"
+                  />
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="w-full bg-background py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">
-                  How It Works
+                  How It Works on Telegram
                 </div>
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
                   A Simple 3-Step Process
@@ -78,7 +164,7 @@ export function LandingPage() {
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
-              <Card className="h-full bg-background transition-all hover:shadow-lg">
+              <Card className="h-full bg-card transition-all hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Icons.bot className="h-8 w-8 text-primary" />
@@ -91,7 +177,7 @@ export function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="h-full bg-background transition-all hover:shadow-lg">
+              <Card className="h-full bg-card transition-all hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Icons.send className="h-8 w-8 text-primary" />
@@ -104,7 +190,7 @@ export function LandingPage() {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="h-full bg-background transition-all hover:shadow-lg">
+              <Card className="h-full bg-card transition-all hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Icons.image className="h-8 w-8 text-primary" />

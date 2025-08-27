@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { generateImage as generateImageWithA4F } from '@/services/a4f';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt from the Telegram user.'),
@@ -28,29 +29,14 @@ export async function generateImage(input: GenerateImageInput): Promise<Generate
   return generateImageFlow(input);
 }
 
-const generateImagePrompt = ai.definePrompt({
-  name: 'generateImagePrompt',
-  input: {schema: GenerateImageInputSchema},
-  output: {schema: GenerateImageOutputSchema},
-  prompt: 'Generate an image based on the following prompt: {{{prompt}}}',
-});
-
 const generateImageFlow = ai.defineFlow(
   {
     name: 'generateImageFlow',
     inputSchema: GenerateImageInputSchema,
     outputSchema: GenerateImageOutputSchema,
   },
-  async input => {
-    const {media} = await ai.generate({
-      prompt: input.prompt,
-      model: 'googleai/imagen-4.0-fast-generate-001',
-    });
-
-    if (!media) {
-      throw new Error('Failed to generate image.');
-    }
-
-    return {imageDataUri: media.url!};
+  async (input) => {
+    const imageDataUri = await generateImageWithA4F(input.prompt);
+    return { imageDataUri };
   }
 );

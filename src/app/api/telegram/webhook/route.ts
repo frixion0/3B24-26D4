@@ -3,6 +3,9 @@ import { generateImage } from '@/ai/flows/generate-image-from-telegram-prompt';
 import { sendMessage, sendPhoto } from '@/lib/telegram';
 
 export const runtime = 'nodejs';
+// Increase timeout for image generation
+export const maxDuration = 120;
+
 
 export async function POST(req: NextRequest) {
   if (!process.env.TELEGRAM_BOT_TOKEN) {
