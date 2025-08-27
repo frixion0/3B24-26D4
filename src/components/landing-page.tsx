@@ -22,7 +22,7 @@ export function LandingPage() {
           <span className="text-lg font-headline">TeleImage</span>
         </Link>
         <Button asChild>
-          <Link href="https://t.me/your_bot_username_here" target="_blank" rel="noopener noreferrer">
+          <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
             <Icons.send className="mr-2 h-4 w-4" />
             Open in Telegram
           </Link>
@@ -43,7 +43,7 @@ export function LandingPage() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button size="lg" asChild>
-                    <Link href="https://t.me/your_bot_username_here" target="_blank" rel="noopener noreferrer">
+                    <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
                       <Icons.bot className="mr-2 h-5 w-5" />
                       Start Creating Now
                     </Link>
