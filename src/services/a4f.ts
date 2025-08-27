@@ -15,7 +15,7 @@ export async function generateImage(prompt: string): Promise<string> {
   const response = await fetch(`${A4F_BASE_URL}/images/generations`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${A4F_API_KEY}`,
+      'Authorization': `DDC ${A4F_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
