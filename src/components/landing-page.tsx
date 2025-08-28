@@ -32,6 +32,7 @@ export function LandingPage() {
   const { toast } = useToast();
   const [webhookStatus, setWebhookStatus] = useState<WebhookStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
+  const [isSettingWebhook, setIsSettingWebhook] = useState(false);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
@@ -54,6 +55,36 @@ export function LandingPage() {
       setWebhookStatus(null);
     } finally {
       setIsStatusLoading(false);
+    }
+  };
+
+  const handleSetWebhook = async () => {
+    setIsSettingWebhook(true);
+    try {
+        const response = await fetch('/api/telegram/set-webhook', { method: 'POST' });
+        const data = await response.json();
+        if (data.ok) {
+            toast({
+                title: "Webhook Set!",
+                description: "Your bot is now connected to Telegram.",
+            });
+            await fetchWebhookStatus();
+        } else {
+            toast({
+                title: "Webhook Error",
+                description: data.error || "An unknown error occurred.",
+                variant: "destructive",
+            });
+        }
+    } catch (error) {
+        toast({
+            title: "Webhook Error",
+            description: "Failed to set the webhook. Check the console for details.",
+            variant: "destructive",
+        });
+        console.error("Error setting webhook:", error);
+    } finally {
+        setIsSettingWebhook(false);
     }
   };
 
@@ -294,10 +325,14 @@ export function LandingPage() {
                             </p>
                         )}
                         {!isWebhookConfigured && (
-                           <p className="text-amber-500 pt-4">
-                            The webhook is not configured correctly. Please run{" "}
-                            <code className="bg-muted px-1 py-0.5 rounded-sm">npm run set:webhook</code> in your terminal to fix it.
-                           </p>
+                           <div className="text-amber-500 pt-4 flex flex-col items-center gap-4">
+                            <p>
+                              The webhook is not configured correctly. Click the button below to fix it.
+                            </p>
+                            <Button onClick={handleSetWebhook} disabled={isSettingWebhook}>
+                              {isSettingWebhook ? 'Connecting...' : 'Connect to Telegram'}
+                            </Button>
+                           </div>
                         )}
                       </div>
                     </div>
