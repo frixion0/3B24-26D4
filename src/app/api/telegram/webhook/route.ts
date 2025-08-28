@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const text = body.message.text as string;
 
     if (text.startsWith('/start') || text.startsWith('/help')) {
-      const modelList = simpleImageModels.map(m => `- \`${m}\``).join('\n');
+      const modelList = simpleImageModels.map(m => `- \`/${m}\``).join('\n');
       const welcomeMessage = `
 Hello there! I'm TeleImage Bot. 🤖
 
@@ -47,12 +47,12 @@ I can turn your text descriptions into beautiful images using different AI model
 **How to use me:**
 Just send me a message with a description of the image you want to create.
 
-**To select a model, prefix your prompt with the model name and a colon.**
-For example: \`imagen3: a photorealistic red panda\`
+**To select a model, use a command before your prompt.**
+For example: \`/imagen3 a photorealistic red panda\`
 
-If you don't specify a model, I'll use the default one (\`${defaultSimpleModel}\`).
+If you don't specify a model command, I'll use the default one (\`${defaultSimpleModel}\`).
 
-**Available Models:**
+**Available Model Commands:**
 ${modelList}
 
 Let your imagination run wild! What would you like to create first?
@@ -68,11 +68,21 @@ Let your imagination run wild! What would you like to create first?
       let prompt = text;
       let model: string | undefined = undefined;
 
-      const modelMatch = text.match(/^([a-zA-Z0-9\-]+):\s*(.*)/);
-      if (modelMatch && simpleImageModels.includes(modelMatch[1])) {
-        const simpleModel = modelMatch[1];
-        model = imageModelMap[simpleModel];
-        prompt = modelMatch[2];
+      const commandMatch = text.match(/^\/([a-zA-Z0-9\-]+)\s+(.*)/s);
+
+      if (commandMatch) {
+          const command = commandMatch[1];
+          const potentialPrompt = commandMatch[2];
+
+          if (simpleImageModels.includes(command)) {
+              model = imageModelMap[command];
+              prompt = potentialPrompt;
+          }
+      }
+      
+      if (!prompt || !prompt.trim()) {
+        await sendMessage(chatId, 'Please provide a prompt after the command.');
+        return NextResponse.json({ ok: true });
       }
       
       const { imageDataUri } = await generateImage({ prompt, model });
