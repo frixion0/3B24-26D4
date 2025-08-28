@@ -55,6 +55,7 @@ export function LandingPage() {
   const [webhookStatus, setWebhookStatus] = useState<WebhookStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
+  const [isDeletingWebhook, setIsDeletingWebhook] = useState(false);
   const [webhookBaseUrl, setWebhookBaseUrl] = useState("https://3-b24-26-d4.vercel.app");
   const [statusError, setStatusError] = useState<string | null>(null);
 
@@ -129,6 +130,38 @@ export function LandingPage() {
     }
   };
 
+  const handleDeleteWebhook = async () => {
+    setIsDeletingWebhook(true);
+    try {
+        const response = await fetch('/api/telegram/delete-webhook', { 
+            method: 'POST',
+        });
+        const data = await response.json();
+        if (data.ok) {
+            toast({
+                title: "Webhook Disconnected!",
+                description: "Your bot is now turned off.",
+            });
+            await fetchWebhookStatus();
+        } else {
+           toast({
+                title: "Webhook Error",
+                description: data.error || "An unknown error occurred.",
+                variant: "destructive",
+            });
+        }
+    } catch (error) {
+        toast({
+            title: "Webhook Error",
+            description: "Failed to disconnect the webhook. Check the console for details.",
+            variant: "destructive",
+        });
+        console.error("Error deleting webhook:", error);
+    } finally {
+        setIsDeletingWebhook(false);
+    }
+  };
+
 
   const handleGenerateImage = async () => {
     if (!prompt.trim()) {
@@ -157,7 +190,7 @@ export function LandingPage() {
     }
   };
 
-  const isWebhookConfigured = webhookStatus?.url === `${webhookBaseUrl}/api/telegram/webhook`;
+  const isWebhookSet = webhookStatus?.url ? true : false;
 
   const renderStatusContent = () => {
     if (isStatusLoading) {
@@ -196,7 +229,7 @@ export function LandingPage() {
         <div className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Current Status</h3>
-            {isWebhookConfigured ? (
+            {isWebhookSet ? (
               <Badge variant="default" className="bg-green-500 hover:bg-green-600">Connected</Badge>
             ) : (
               <Badge variant="destructive">Not Connected</Badge>
@@ -430,13 +463,19 @@ export function LandingPage() {
                   </div>
                   {renderStatusContent()}
                 </CardContent>
-                <CardFooter className="flex-col items-center gap-4">
-                    <Button onClick={handleSetWebhook} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
-                        {isSettingWebhook ? 'Connecting...' : 'Update & Connect Webhook'}
-                    </Button>
-                    {!isWebhookConfigured && !isStatusLoading && !statusError &&(
+                <CardFooter className="flex-col items-start gap-4">
+                    {!isWebhookSet ? (
+                      <Button onClick={handleSetWebhook} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
+                        {isSettingWebhook ? 'Connecting...' : 'Connect Bot'}
+                      </Button>
+                    ) : (
+                      <Button onClick={handleDeleteWebhook} disabled={isDeletingWebhook} variant="destructive" className="w-full">
+                        {isDeletingWebhook ? 'Disconnecting...' : 'Disconnect Bot'}
+                      </Button>
+                    )}
+                    {webhookStatus?.url !== `${webhookBaseUrl}/api/telegram/webhook` && !isStatusLoading && !statusError && isWebhookSet &&(
                         <p className="text-amber-500 text-sm">
-                            Your webhook is not configured correctly. Update the URL and click the button above.
+                            Your active webhook does not match the URL above. Connect again to update it.
                         </p>
                     )}
                 </CardFooter>
