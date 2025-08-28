@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { generateImage as generateImageWithA4F } from '@/services/a4f';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt from the Telegram user.'),
@@ -20,7 +19,7 @@ const GenerateImageOutputSchema = z.object({
   imageDataUri: z
     .string()
     .describe(
-      'The generated image as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' 
+      'The generated image as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
     ),
 });
 export type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
@@ -35,8 +34,21 @@ const generateImageFlow = ai.defineFlow(
     inputSchema: GenerateImageInputSchema,
     outputSchema: GenerateImageOutputSchema,
   },
-  async (input) => {
-    const imageDataUri = await generateImageWithA4F(input.prompt);
+  async ({ prompt }) => {
+    const { media } = await ai.generate({
+        model: 'googleai/imagen-2.0-generate-001',
+        prompt,
+        config: {
+            aspectRatio: '1:1',
+        }
+    });
+    
+    const imageDataUri = media.url;
+
+    if (!imageDataUri) {
+        throw new Error('Image generation failed to produce a data URI.');
+    }
+    
     return { imageDataUri };
   }
 );

@@ -36,6 +36,8 @@ export function LandingPage() {
 
   useEffect(() => {
     setYear(new Date().getFullYear());
+    // Auto-magically set the webhook on page load.
+    handleSetWebhook(true);
     fetchWebhookStatus();
   }, []);
   
@@ -58,30 +60,36 @@ export function LandingPage() {
     }
   };
 
-  const handleSetWebhook = async () => {
+  const handleSetWebhook = async (silent = false) => {
     setIsSettingWebhook(true);
     try {
         const response = await fetch('/api/telegram/set-webhook', { method: 'POST' });
         const data = await response.json();
         if (data.ok) {
-            toast({
-                title: "Webhook Set!",
-                description: "Your bot is now connected to Telegram.",
-            });
+            if (!silent) {
+              toast({
+                  title: "Webhook Set!",
+                  description: "Your bot is now connected to Telegram.",
+              });
+            }
             await fetchWebhookStatus();
         } else {
+           if (!silent) {
             toast({
                 title: "Webhook Error",
                 description: data.error || "An unknown error occurred.",
                 variant: "destructive",
             });
+           }
         }
     } catch (error) {
-        toast({
-            title: "Webhook Error",
-            description: "Failed to set the webhook. Check the console for details.",
-            variant: "destructive",
-        });
+        if (!silent) {
+          toast({
+              title: "Webhook Error",
+              description: "Failed to set the webhook. Check the console for details.",
+              variant: "destructive",
+          });
+        }
         console.error("Error setting webhook:", error);
     } finally {
         setIsSettingWebhook(false);
@@ -327,10 +335,10 @@ export function LandingPage() {
                         {!isWebhookConfigured && (
                            <div className="text-amber-500 pt-4 flex flex-col items-center gap-4">
                             <p>
-                              The webhook is not configured correctly. Click the button below to fix it.
+                              The webhook is not configured correctly. Refresh the page to try again.
                             </p>
-                            <Button onClick={handleSetWebhook} disabled={isSettingWebhook}>
-                              {isSettingWebhook ? 'Connecting...' : 'Connect to Telegram'}
+                            <Button onClick={() => handleSetWebhook()} disabled={isSettingWebhook}>
+                              {isSettingWebhook ? 'Connecting...' : 'Retry Connection'}
                             </Button>
                            </div>
                         )}
@@ -338,7 +346,7 @@ export function LandingPage() {
                     </div>
                   ) : (
                     <div className="text-center text-destructive">
-                      <p>Could not retrieve webhook status. Please check your TELEGRAM_BOT_TOKEN.</p>
+                      <p>Could not retrieve webhook status. Please check your TELEGRAM_BOT_TOKEN and WEBHOOK_BASE_URL in your .env file.</p>
                     </div>
                   )}
                 </CardContent>
