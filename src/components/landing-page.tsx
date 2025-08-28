@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -19,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "./ui/label";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Terminal } from "lucide-react";
 
 interface WebhookStatus {
   ok: boolean;
@@ -53,6 +56,7 @@ export function LandingPage() {
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
   const [webhookBaseUrl, setWebhookBaseUrl] = useState("");
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
@@ -69,6 +73,7 @@ export function LandingPage() {
   
   const fetchWebhookStatus = async () => {
     setIsStatusLoading(true);
+    setStatusError(null);
     try {
       const response = await fetch('/api/telegram/webhook-status');
       const data = await response.json();
@@ -76,10 +81,12 @@ export function LandingPage() {
         setWebhookStatus(data);
       } else {
         console.error("Failed to fetch webhook status:", data.error);
+        setStatusError(data.error || 'An unknown error occurred.');
         setWebhookStatus(null);
       }
     } catch (error) {
       console.error("Error fetching webhook status:", error);
+      setStatusError('An unexpected error occurred while fetching status.');
       setWebhookStatus(null);
     } finally {
       setIsStatusLoading(false);
@@ -167,6 +174,77 @@ export function LandingPage() {
   };
 
   const isWebhookConfigured = webhookStatus?.url === `${webhookBaseUrl}/api/telegram/webhook`;
+
+  const renderStatusContent = () => {
+    if (isStatusLoading) {
+      return (
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (statusError) {
+       if (statusError.includes('TELEGRAM_BOT_TOKEN')) {
+         return (
+            <Alert variant="destructive">
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Action Required</AlertTitle>
+              <AlertDescription>
+                Your `TELEGRAM_BOT_TOKEN` is not set on the server. Please add it to your hosting provider's environment variables to continue.
+              </AlertDescription>
+            </Alert>
+         )
+       }
+      return (
+        <div className="text-center text-destructive pt-4">
+          <p>Could not retrieve webhook status: {statusError}</p>
+        </div>
+      );
+    }
+
+    if (webhookStatus) {
+      return (
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Current Status</h3>
+            {isWebhookConfigured ? (
+              <Badge variant="default" className="bg-green-500 hover:bg-green-600">Connected</Badge>
+            ) : (
+              <Badge variant="destructive">Not Connected</Badge>
+            )}
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>
+              <span className="font-semibold text-foreground">Active Webhook URL:</span>{" "}
+              <span className="break-all">{webhookStatus.url || "Not set"}</span>
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">Expected URL:</span>{" "}
+              <span className="break-all">{webhookBaseUrl}/api/telegram/webhook</span>
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">Pending Updates:</span>{" "}
+              {webhookStatus.pending_update_count}
+            </p>
+            {webhookStatus.last_error_message && (
+              <p className="text-destructive">
+                <span className="font-semibold">Last Error:</span>{" "}
+                {webhookStatus.last_error_message}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background text-foreground">
@@ -366,56 +444,13 @@ export function LandingPage() {
                         This should be the public URL of your deployed website.
                     </p>
                   </div>
-                  {isStatusLoading ? (
-                    <div className="flex items-center space-x-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-[250px]" />
-                        <Skeleton className="h-4 w-[200px]" />
-                      </div>
-                    </div>
-                  ) : webhookStatus ? (
-                    <div className="space-y-4 pt-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium">Current Status</h3>
-                          {isWebhookConfigured ? (
-                              <Badge variant="default" className="bg-green-500 hover:bg-green-600">Connected</Badge>
-                          ) : (
-                              <Badge variant="destructive">Not Connected</Badge>
-                          )}
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        <p>
-                          <span className="font-semibold text-foreground">Active Webhook URL:</span>{" "}
-                          <span className="break-all">{webhookStatus.url || "Not set"}</span>
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">Expected URL:</span>{" "}
-                          <span className="break-all">{webhookBaseUrl}/api/telegram/webhook</span>
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">Pending Updates:</span>{" "}
-                          {webhookStatus.pending_update_count}
-                        </p>
-                        {webhookStatus.last_error_message && (
-                            <p className="text-destructive">
-                                <span className="font-semibold">Last Error:</span>{" "}
-                                {webhookStatus.last_error_message}
-                            </p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center text-destructive pt-4">
-                      <p>Could not retrieve webhook status. Please check your TELEGRAM_BOT_TOKEN and try updating the URL above.</p>
-                    </div>
-                  )}
+                  {renderStatusContent()}
                 </CardContent>
                 <CardFooter className="flex-col items-center gap-4">
                     <Button onClick={() => handleSetWebhook()} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
                         {isSettingWebhook ? 'Connecting...' : 'Update & Connect Webhook'}
                     </Button>
-                    {!isWebhookConfigured && !isStatusLoading && (
+                    {!isWebhookConfigured && !isStatusLoading && !statusError &&(
                         <p className="text-amber-500 text-sm">
                             Your webhook is not configured correctly. Update the URL and click the button above.
                         </p>
@@ -440,3 +475,6 @@ export function LandingPage() {
     </div>
   );
 }
+
+
+    
