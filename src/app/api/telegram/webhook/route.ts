@@ -47,14 +47,15 @@ Let your imagination run wild! What would you like to create first?
       return NextResponse.json({ ok: true });
     }
 
-    // Acknowledge the request
-    await sendMessage(chatId, '🎨 Generating your masterpiece... this might take a moment.');
+    // Acknowledge the request first to provide immediate feedback
+    await sendMessage(chatId, '🎨 Got it! Generating your masterpiece... this might take a moment.');
 
     try {
       const { imageDataUri } = await generateImage({ prompt: text });
       await sendPhoto(chatId, imageDataUri, `Here is your image for: "${text}"`);
     } catch (error) {
       console.error('Error generating or sending image:', error);
+      // Ensure a user-facing error is sent on failure
       await sendMessage(chatId, '😔 Sorry, I had trouble creating an image for that prompt. Please try a different one or try again later.');
     }
 
