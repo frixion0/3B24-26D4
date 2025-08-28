@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { generateImage as generateImageWithA4F } from '@/services/a4f';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt from the Telegram user.'),
@@ -35,20 +36,18 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async ({ prompt }) => {
-    const { media } = await ai.generate({
-        model: 'googleai/imagen-2.0-generate-001',
-        prompt,
-        config: {
-            aspectRatio: '1:1',
-        }
-    });
+    const imageUrl = await generateImageWithA4F(prompt);
     
-    const imageDataUri = media.url;
-
-    if (!imageDataUri) {
-        throw new Error('Image generation failed to produce a data URI.');
+    // Convert image URL to data URI
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
     }
-    
+    const contentType = response.headers.get('content-type') || 'image/png';
+    const buffer = await response.arrayBuffer();
+    const base64Data = Buffer.from(buffer).toString('base64');
+    const imageDataUri = `data:${contentType};base64,${base64Data}`;
+
     return { imageDataUri };
   }
 );
