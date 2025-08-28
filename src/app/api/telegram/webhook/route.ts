@@ -6,14 +6,17 @@ export const runtime = 'nodejs';
 // Increase timeout for image generation
 export const maxDuration = 120;
 
-const imageModels = [
-    'provider-3/FLUX.1-dev',
-    'provider-4/qwen-image',
-    'provider-4/imagen-3',
-    'provider-4/imagen-4',
-    'provider-6/sana-1.5-flash',
-    'provider-6/sana-1.5',
-];
+const imageModelMap: Record<string, string> = {
+    'flux': 'provider-3/FLUX.1-dev',
+    'qwen': 'provider-4/qwen-image',
+    'imagen3': 'provider-4/imagen-3',
+    'imagen4': 'provider-4/imagen-4',
+    'sana-flash': 'provider-6/sana-1.5-flash',
+    'sana': 'provider-6/sana-1.5',
+};
+
+const simpleImageModels = Object.keys(imageModelMap);
+const defaultSimpleModel = simpleImageModels[0];
 
 
 export async function POST(req: NextRequest) {
@@ -35,7 +38,7 @@ export async function POST(req: NextRequest) {
     const text = body.message.text as string;
 
     if (text.startsWith('/start') || text.startsWith('/help')) {
-      const modelList = imageModels.map(m => `- \`${m}\``).join('\n');
+      const modelList = simpleImageModels.map(m => `- \`${m}\``).join('\n');
       const welcomeMessage = `
 Hello there! I'm TeleImage Bot. 🤖
 
@@ -45,9 +48,9 @@ I can turn your text descriptions into beautiful images using different AI model
 Just send me a message with a description of the image you want to create.
 
 **To select a model, prefix your prompt with the model name and a colon.**
-For example: \`provider-4/imagen-3: a photorealistic red panda\`
+For example: \`imagen3: a photorealistic red panda\`
 
-If you don't specify a model, I'll use the default one (\`${imageModels[0]}\`).
+If you don't specify a model, I'll use the default one (\`${defaultSimpleModel}\`).
 
 **Available Models:**
 ${modelList}
@@ -65,9 +68,10 @@ Let your imagination run wild! What would you like to create first?
       let prompt = text;
       let model: string | undefined = undefined;
 
-      const modelMatch = text.match(/^([a-zA-Z0-9\-\.\/]+):\s*(.*)/);
-      if (modelMatch && imageModels.includes(modelMatch[1])) {
-        model = modelMatch[1];
+      const modelMatch = text.match(/^([a-zA-Z0-9\-]+):\s*(.*)/);
+      if (modelMatch && simpleImageModels.includes(modelMatch[1])) {
+        const simpleModel = modelMatch[1];
+        model = imageModelMap[simpleModel];
         prompt = modelMatch[2];
       }
       
