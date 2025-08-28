@@ -6,6 +6,15 @@ export const runtime = 'nodejs';
 // Increase timeout for image generation
 export const maxDuration = 120;
 
+const imageModels = [
+    'provider-3/FLUX.1-dev',
+    'provider-4/qwen-image',
+    'provider-4/imagen-3',
+    'provider-4/imagen-4',
+    'provider-6/sana-1.5-flash',
+    'provider-6/sana-1.5',
+];
+
 
 export async function POST(req: NextRequest) {
   if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -26,20 +35,22 @@ export async function POST(req: NextRequest) {
     const text = body.message.text as string;
 
     if (text.startsWith('/start') || text.startsWith('/help')) {
+      const modelList = imageModels.map(m => `- \`${m}\``).join('\n');
       const welcomeMessage = `
 Hello there! I'm TeleImage Bot. 🤖
 
-I can turn your text descriptions into beautiful images. It's easy to get started!
+I can turn your text descriptions into beautiful images using different AI models.
 
 **How to use me:**
 Just send me a message with a description of the image you want to create.
 
-**For example, you could send:**
-- "A serene painting of a cherry blossom tree by a river"
-- "A futuristic cityscape with flying cars, neon lights, cinematic"
-- "A photorealistic image of a red panda wearing a tiny chef's hat"
+**To select a model, prefix your prompt with the model name and a colon.**
+For example: \`provider-4/imagen-3: a photorealistic red panda\`
 
-I'll get to work and send you back your unique creation. If I ever get stuck, I'll let you know.
+If you don't specify a model, I'll use the default one (\`${imageModels[0]}\`).
+
+**Available Models:**
+${modelList}
 
 Let your imagination run wild! What would you like to create first?
       `;
@@ -51,7 +62,16 @@ Let your imagination run wild! What would you like to create first?
     await sendMessage(chatId, '🎨 Got it! Generating your masterpiece... this might take a moment.');
 
     try {
-      const { imageDataUri } = await generateImage({ prompt: text });
+      let prompt = text;
+      let model: string | undefined = undefined;
+
+      const modelMatch = text.match(/^([a-zA-Z0-9\-\.\/]+):\s*(.*)/);
+      if (modelMatch && imageModels.includes(modelMatch[1])) {
+        model = modelMatch[1];
+        prompt = modelMatch[2];
+      }
+      
+      const { imageDataUri } = await generateImage({ prompt, model });
       await sendPhoto(chatId, imageDataUri, `Here is your image for: "${text}"`);
     } catch (error) {
       console.error('Error generating or sending image:', error);
