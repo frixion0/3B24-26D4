@@ -55,21 +55,16 @@ export function LandingPage() {
   const [webhookStatus, setWebhookStatus] = useState<WebhookStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
-  const [webhookBaseUrl, setWebhookBaseUrl] = useState("");
+  const [webhookBaseUrl, setWebhookBaseUrl] = useState(process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL || "");
   const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
-    const initialUrl = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '';
+    // Use NEXT_PUBLIC_WEBHOOK_BASE_URL if available, otherwise default to current host.
+    const initialUrl = webhookBaseUrl || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '');
     setWebhookBaseUrl(initialUrl);
     fetchWebhookStatus();
   }, []);
-
-  useEffect(() => {
-    if (webhookBaseUrl) {
-      handleSetWebhook(true); // Auto-set webhook when base URL is available/changed
-    }
-  }, [webhookBaseUrl]);
   
   const fetchWebhookStatus = async () => {
     setIsStatusLoading(true);
@@ -93,15 +88,13 @@ export function LandingPage() {
     }
   };
 
-  const handleSetWebhook = async (silent = false) => {
+  const handleSetWebhook = async () => {
     if (!webhookBaseUrl) {
-        if (!silent) {
-            toast({
-                title: "Webhook URL Needed",
-                description: "Please enter your website's base URL.",
-                variant: "destructive",
-            });
-        }
+        toast({
+            title: "Webhook URL Needed",
+            description: "Please enter your website's base URL.",
+            variant: "destructive",
+        });
         return;
     }
     setIsSettingWebhook(true);
@@ -115,30 +108,24 @@ export function LandingPage() {
         });
         const data = await response.json();
         if (data.ok) {
-            if (!silent) {
-              toast({
-                  title: "Webhook Set!",
-                  description: "Your bot is now connected to Telegram.",
-              });
-            }
+            toast({
+                title: "Webhook Set!",
+                description: "Your bot is now connected to Telegram.",
+            });
             await fetchWebhookStatus();
         } else {
-           if (!silent) {
-            toast({
+           toast({
                 title: "Webhook Error",
                 description: data.error || "An unknown error occurred.",
                 variant: "destructive",
             });
-           }
         }
     } catch (error) {
-        if (!silent) {
-          toast({
-              title: "Webhook Error",
-              description: "Failed to set the webhook. Check the console for details.",
-              variant: "destructive",
-          });
-        }
+        toast({
+            title: "Webhook Error",
+            description: "Failed to set the webhook. Check the console for details.",
+            variant: "destructive",
+        });
         console.error("Error setting webhook:", error);
     } finally {
         setIsSettingWebhook(false);
@@ -447,7 +434,7 @@ export function LandingPage() {
                   {renderStatusContent()}
                 </CardContent>
                 <CardFooter className="flex-col items-center gap-4">
-                    <Button onClick={() => handleSetWebhook()} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
+                    <Button onClick={handleSetWebhook} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
                         {isSettingWebhook ? 'Connecting...' : 'Update & Connect Webhook'}
                     </Button>
                     {!isWebhookConfigured && !isStatusLoading && !statusError &&(
@@ -475,6 +462,5 @@ export function LandingPage() {
     </div>
   );
 }
-
 
     

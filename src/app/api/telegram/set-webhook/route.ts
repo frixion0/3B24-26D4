@@ -9,10 +9,6 @@ async function setWebhook(webhookUrl: string) {
     return { ok: false, error: 'TELEGRAM_BOT_TOKEN is not set in your .env file.', status: 500 };
   }
 
-  if (!webhookUrl) {
-    return { ok: false, error: 'WEBHOOK_BASE_URL is not set.', status: 500 };
-  }
-  
   const apiUrl = `https://api.telegram.org/bot${botToken}/setWebhook`;
 
   try {
@@ -52,3 +48,5 @@ export async function POST(req: NextRequest) {
     const result = await setWebhook(webhookUrl);
     return NextResponse.json(result, { status: result.status });
 }
+
+    
