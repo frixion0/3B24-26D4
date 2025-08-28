@@ -4,7 +4,8 @@ export const runtime = 'nodejs';
 
 // This function checks the status of the Telegram webhook.
 export async function GET(req: NextRequest) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken = "8354841529:AAHoH88pqVExG1AcQ6mi3KjA-HO5nlsBwq0";
+  const webhookBaseUrl = "https://3-b24-26-d4.vercel.app";
 
   if (!botToken) {
     return NextResponse.json(
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     if (result.ok) {
         // We add the expected webhook URL to the response for easy comparison on the client.
-        const expectedUrl = `${process.env.WEBHOOK_BASE_URL}/api/telegram/webhook`;
+        const expectedUrl = `${webhookBaseUrl}/api/telegram/webhook`;
         return NextResponse.json({ ok: true, ...result.result, expected_url: expectedUrl });
     } else {
       return NextResponse.json(

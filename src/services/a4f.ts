@@ -1,6 +1,6 @@
 'use server';
 
-const A4F_API_KEY = process.env.A4F_API_KEY;
+const A4F_API_KEY = "ddc-a4f-25c62da6794b4fdf9720708012108518";
 const A4F_API_BASE_URL = 'https://api.a4f.co/v1';
 
 if (!A4F_API_KEY) {

@@ -55,16 +55,12 @@ export function LandingPage() {
   const [webhookStatus, setWebhookStatus] = useState<WebhookStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
-  const [webhookBaseUrl, setWebhookBaseUrl] = useState(process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL || "");
+  const [webhookBaseUrl, setWebhookBaseUrl] = useState("https://3-b24-26-d4.vercel.app");
   const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
     fetchWebhookStatus();
-    // Set the base URL from env on initial load if available
-    if (process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL) {
-      setWebhookBaseUrl(process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL);
-    }
   }, []);
   
   const fetchWebhookStatus = async () => {

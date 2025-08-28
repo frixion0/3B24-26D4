@@ -1,4 +1,4 @@
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_TOKEN = "8354841529:AAHoH88pqVExG1AcQ6mi3KjA-HO5nlsBwq0";
 const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBSITE_LINK = 'https://neural-canvas-seven.vercel.app/';
 

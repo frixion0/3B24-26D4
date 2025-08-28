@@ -20,7 +20,8 @@ const defaultSimpleModel = simpleImageModels[0];
 
 
 export async function POST(req: NextRequest) {
-  if (!process.env.TELEGRAM_BOT_TOKEN) {
+  const botToken = "8354841529:AAHoH88pqVExG1AcQ6mi3KjA-HO5nlsBwq0";
+  if (!botToken) {
     console.error('TELEGRAM_BOT_TOKEN is not set.');
     return NextResponse.json({ error: 'Bot is not configured.' }, { status: 500 });
   }
