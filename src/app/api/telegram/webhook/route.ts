@@ -66,7 +66,7 @@ Let your imagination run wild! What would you like to create first?
 
     try {
       let prompt = text;
-      let model: string | undefined = undefined;
+      let model: string | undefined = imageModelMap[defaultSimpleModel]; // Default model
 
       const commandMatch = text.match(/^\/([a-zA-Z0-9\-]+)\s+(.*)/s);
 
@@ -88,7 +88,7 @@ Let your imagination run wild! What would you like to create first?
       const { imageDataUri } = await generateImage({ prompt, model });
       await sendPhoto(chatId, imageDataUri, `Here is your image for: "${text}"`);
     } catch (error) {
-      console.error('Error generating or sending image:', error);
+      console.error('Error in bot image generation/sending:', error);
       // Ensure a user-facing error is sent on failure
       await sendMessage(chatId, '😔 Sorry, I had trouble creating an image for that prompt. Please try a different one or try again later.');
     }
