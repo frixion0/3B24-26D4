@@ -11,6 +11,13 @@ import { generateImage, GenerateImageInput } from "@/ai/flows/generate-image-fro
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "./ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface WebhookStatus {
   ok: boolean;
@@ -24,9 +31,20 @@ interface WebhookStatus {
   expected_url: string;
 }
 
+const imageModels = [
+  'provider-3/FLUX.1-dev',
+  'provider-4/qwen-image',
+  'provider-4/imagen-3',
+  'provider-4/imagen-4',
+  'provider-6/sana-1.5-flash',
+  'provider-6/sana-1.5',
+];
+
+
 export function LandingPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [prompt, setPrompt] = useState("");
+  const [selectedModel, setSelectedModel] = useState(imageModels[0]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -109,7 +127,7 @@ export function LandingPage() {
     setIsLoading(true);
     setGeneratedImage(null);
     try {
-      const input: GenerateImageInput = { prompt };
+      const input: GenerateImageInput = { prompt, model: selectedModel };
       const result = await generateImage(input);
       setGeneratedImage(result.imageDataUri);
     } catch (error) {
@@ -193,18 +211,32 @@ export function LandingPage() {
                 </div>
             </div>
             <div className="mx-auto mt-8 max-w-2xl">
-                <div className="flex gap-2">
-                    <Input
-                    type="text"
-                    placeholder="e.g., 'A majestic lion wearing a crown'"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleGenerateImage()}
-                    disabled={isLoading}
-                    />
-                    <Button onClick={handleGenerateImage} disabled={isLoading}>
-                        {isLoading ? 'Generating...' : 'Generate'}
-                    </Button>
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                        <Input
+                        type="text"
+                        placeholder="e.g., 'A majestic lion wearing a crown'"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleGenerateImage()}
+                        disabled={isLoading}
+                        />
+                        <Button onClick={handleGenerateImage} disabled={isLoading}>
+                            {isLoading ? 'Generating...' : 'Generate'}
+                        </Button>
+                    </div>
+                    <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isLoading}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imageModels.map(model => (
+                          <SelectItem key={model} value={model}>
+                            {model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                 </div>
             </div>
 

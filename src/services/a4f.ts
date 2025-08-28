@@ -9,7 +9,7 @@ if (!A4F_API_KEY) {
   );
 }
 
-export async function generateImage(prompt: string): Promise<string> {
+export async function generateImage(prompt: string, model: string = 'provider-3/FLUX.1-dev'): Promise<string> {
   if (!A4F_API_KEY) {
     throw new Error('A4F_API_KEY is not configured.');
   }
@@ -21,7 +21,7 @@ export async function generateImage(prompt: string): Promise<string> {
       Authorization: `Bearer ${A4F_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'provider-3/FLUX.1-dev',
+      model: model,
       prompt: prompt,
       n: 1,
       size: '1024x1024',

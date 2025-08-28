@@ -13,6 +13,7 @@ import { generateImage as generateImageWithA4F } from '@/services/a4f';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt from the Telegram user.'),
+  model: z.string().optional().describe('The image generation model to use.'),
 });
 export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -35,8 +36,8 @@ const generateImageFlow = ai.defineFlow(
     inputSchema: GenerateImageInputSchema,
     outputSchema: GenerateImageOutputSchema,
   },
-  async ({ prompt }) => {
-    const imageUrl = await generateImageWithA4F(prompt);
+  async ({ prompt, model }) => {
+    const imageUrl = await generateImageWithA4F(prompt, model);
     
     // Convert image URL to data URI
     const response = await fetch(imageUrl);
