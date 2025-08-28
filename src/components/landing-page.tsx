@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Icons } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { generateImage, GenerateImageInput } from "@/ai/flows/generate-image-from-telegram-prompt";
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "./ui/label";
 
 interface WebhookStatus {
   ok: boolean;
@@ -51,13 +52,20 @@ export function LandingPage() {
   const [webhookStatus, setWebhookStatus] = useState<WebhookStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
+  const [webhookBaseUrl, setWebhookBaseUrl] = useState("");
 
   useEffect(() => {
     setYear(new Date().getFullYear());
-    // Auto-magically set the webhook on page load.
-    handleSetWebhook(true);
+    const initialUrl = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '';
+    setWebhookBaseUrl(initialUrl);
     fetchWebhookStatus();
   }, []);
+
+  useEffect(() => {
+    if (webhookBaseUrl) {
+      handleSetWebhook(true); // Auto-set webhook when base URL is available/changed
+    }
+  }, [webhookBaseUrl]);
   
   const fetchWebhookStatus = async () => {
     setIsStatusLoading(true);
@@ -79,9 +87,25 @@ export function LandingPage() {
   };
 
   const handleSetWebhook = async (silent = false) => {
+    if (!webhookBaseUrl) {
+        if (!silent) {
+            toast({
+                title: "Webhook URL Needed",
+                description: "Please enter your website's base URL.",
+                variant: "destructive",
+            });
+        }
+        return;
+    }
     setIsSettingWebhook(true);
     try {
-        const response = await fetch('/api/telegram/set-webhook', { method: 'POST' });
+        const response = await fetch('/api/telegram/set-webhook', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ webhookBaseUrl }),
+        });
         const data = await response.json();
         if (data.ok) {
             if (!silent) {
@@ -142,7 +166,7 @@ export function LandingPage() {
     }
   };
 
-  const isWebhookConfigured = webhookStatus?.url === webhookStatus?.expected_url;
+  const isWebhookConfigured = webhookStatus?.url === `${webhookBaseUrl}/api/telegram/webhook`;
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background text-foreground">
@@ -326,7 +350,22 @@ export function LandingPage() {
             </div>
             <div className="mx-auto mt-8 max-w-2xl">
               <Card>
-                <CardContent className="p-6">
+                <CardHeader>
+                    <CardTitle>Webhook Configuration</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="webhook-url">Your Website's Base URL</Label>
+                    <Input 
+                      id="webhook-url"
+                      placeholder="https://example.com" 
+                      value={webhookBaseUrl}
+                      onChange={(e) => setWebhookBaseUrl(e.target.value)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        This should be the public URL of your deployed website.
+                    </p>
+                  </div>
                   {isStatusLoading ? (
                     <div className="flex items-center space-x-4">
                       <Skeleton className="h-12 w-12 rounded-full" />
@@ -336,9 +375,9 @@ export function LandingPage() {
                       </div>
                     </div>
                   ) : webhookStatus ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pt-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium">Webhook Status</h3>
+                        <h3 className="text-lg font-medium">Current Status</h3>
                           {isWebhookConfigured ? (
                               <Badge variant="default" className="bg-green-500 hover:bg-green-600">Connected</Badge>
                           ) : (
@@ -347,12 +386,12 @@ export function LandingPage() {
                       </div>
                       <div className="text-sm text-muted-foreground space-y-2">
                         <p>
-                          <span className="font-semibold text-foreground">Webhook URL:</span>{" "}
+                          <span className="font-semibold text-foreground">Active Webhook URL:</span>{" "}
                           <span className="break-all">{webhookStatus.url || "Not set"}</span>
                         </p>
                         <p>
                           <span className="font-semibold text-foreground">Expected URL:</span>{" "}
-                          <span className="break-all">{webhookStatus.expected_url}</span>
+                          <span className="break-all">{webhookBaseUrl}/api/telegram/webhook</span>
                         </p>
                         <p>
                           <span className="font-semibold text-foreground">Pending Updates:</span>{" "}
@@ -364,24 +403,24 @@ export function LandingPage() {
                                 {webhookStatus.last_error_message}
                             </p>
                         )}
-                        {!isWebhookConfigured && (
-                           <div className="text-amber-500 pt-4 flex flex-col items-center gap-4">
-                            <p>
-                              The webhook is not configured correctly. Refresh the page to try again.
-                            </p>
-                            <Button onClick={() => handleSetWebhook()} disabled={isSettingWebhook}>
-                              {isSettingWebhook ? 'Connecting...' : 'Retry Connection'}
-                            </Button>
-                           </div>
-                        )}
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center text-destructive">
-                      <p>Could not retrieve webhook status. Please check your TELEGRAM_BOT_TOKEN and WEBHOOK_BASE_URL in your .env file.</p>
+                    <div className="text-center text-destructive pt-4">
+                      <p>Could not retrieve webhook status. Please check your TELEGRAM_BOT_TOKEN and try updating the URL above.</p>
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex-col items-center gap-4">
+                    <Button onClick={() => handleSetWebhook()} disabled={isSettingWebhook || !webhookBaseUrl} className="w-full">
+                        {isSettingWebhook ? 'Connecting...' : 'Update & Connect Webhook'}
+                    </Button>
+                    {!isWebhookConfigured && !isStatusLoading && (
+                        <p className="text-amber-500 text-sm">
+                            Your webhook is not configured correctly. Update the URL and click the button above.
+                        </p>
+                    )}
+                </CardFooter>
               </Card>
             </div>
           </div>

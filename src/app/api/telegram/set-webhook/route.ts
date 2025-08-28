@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-async function setWebhook() {
+async function setWebhook(webhookUrl: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const webhookUrl = `${process.env.WEBHOOK_BASE_URL}/api/telegram/webhook`;
 
   if (!botToken) {
     return { ok: false, error: 'TELEGRAM_BOT_TOKEN is not set in your .env file.', status: 500 };
   }
 
-  if (!process.env.WEBHOOK_BASE_URL) {
-    return { ok: false, error: 'WEBHOOK_BASE_URL is not set in your .env file.', status: 500 };
+  if (!webhookUrl) {
+    return { ok: false, error: 'WEBHOOK_BASE_URL is not set.', status: 500 };
   }
   
   const apiUrl = `https://api.telegram.org/bot${botToken}/setWebhook`;
@@ -42,6 +41,14 @@ async function setWebhook() {
 
 
 export async function POST(req: NextRequest) {
-    const result = await setWebhook();
+    const body = await req.json();
+    const webhookBaseUrl = body.webhookBaseUrl || process.env.WEBHOOK_BASE_URL;
+    const webhookUrl = `${webhookBaseUrl}/api/telegram/webhook`;
+
+    if (!webhookBaseUrl) {
+        return NextResponse.json({ ok: false, error: 'WEBHOOK_BASE_URL is not provided or configured.' }, { status: 400 });
+    }
+
+    const result = await setWebhook(webhookUrl);
     return NextResponse.json(result, { status: result.status });
 }
