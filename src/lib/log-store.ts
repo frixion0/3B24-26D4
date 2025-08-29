@@ -1,7 +1,10 @@
-// This is a free, anonymous bin from JSONBin.io.
+// This is a free, anonymous bin from another service to ensure persistence.
 // It's a simple way to have a persistent data store without any setup.
-const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/669fddc0e41b4d34e4171348';
-const MASTER_KEY = '$2a$10$w8iZBi2C992xG2GdSgqJpeQmfjM2Vl92JvO2LwAifA.uLoa2mGTf6'; // Read/Write key for this specific bin
+const BIN_URL = 'https://api.npoint.io/46f5b92778328639c381';
+
+interface LogData {
+  logs: LogEntry[];
+}
 
 interface LogEntry {
   chatId: number;
@@ -12,28 +15,37 @@ interface LogEntry {
   timestamp: string;
 }
 
+// npoint.io doesn't have a "latest" version concept, so we work with the main URL.
+// It also doesn't require API keys for public read/write bins like this one.
+
 export async function getLogs(): Promise<LogEntry[]> {
   try {
-    const response = await fetch(`${JSONBIN_URL}/latest`, {
+    // Add a cache-busting query parameter to ensure we get the latest data
+    const response = await fetch(`${BIN_URL}?t=${new Date().getTime()}`, {
       method: 'GET',
       headers: {
-        'X-Master-Key': MASTER_KEY,
         'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      // If the bin is empty, it might return a 404, which is okay.
+      // If the bin is empty, it will return a default object.
+      // If it truly fails, we'll get an error.
       if (response.status === 404) {
+        // This case might not happen with npoint, but it's good practice.
         return [];
       }
-      throw new Error(`Failed to fetch logs: ${response.statusText}`);
+      // We'll try to parse the error, but fall back to a generic message.
+      const errorBody = await response.text();
+      console.error(`Failed to fetch logs from npoint: ${response.statusText}`, errorBody);
+      // Return empty on error to prevent crashing the analytics page.
+      return [];
     }
 
-    const data: any = await response.json();
-    return data.record.logs || [];
+    const data: LogData = await response.json();
+    return data.logs || [];
   } catch (error) {
-    console.error('Error getting logs from JSONBin:', error);
+    console.error('Error getting logs from npoint:', error);
     return []; // Return empty on error
   }
 }
@@ -47,20 +59,20 @@ export async function appendLog(logEntry: object): Promise<void> {
 
   // 3. Write the entire log array back
   try {
-    const response = await fetch(JSONBIN_URL, {
-      method: 'PUT',
+    const response = await fetch(BIN_URL, {
+      method: 'POST', // With npoint, POST will overwrite the entire bin content.
       headers: {
-        'X-Master-Key': MASTER_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ logs: updatedLogs }),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to update logs: ${response.statusText}`);
+      const errorBody = await response.text();
+      throw new Error(`Failed to update logs: ${response.statusText} - ${errorBody}`);
     }
   } catch (error) {
-    console.error('Error appending log to JSONBin:', error);
+    console.error('Error appending log to npoint:', error);
     // We don't re-throw here because logging shouldn't crash the main application flow.
   }
 }
