@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/ai/flows/generate-image-from-telegram-prompt';
 import { sendMessage, sendPhoto } from '@/lib/telegram';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const runtime = 'nodejs';
 // Increase timeout for image generation
@@ -18,6 +20,18 @@ const imageModelMap: Record<string, string> = {
 const simpleImageModels = Object.keys(imageModelMap);
 const defaultSimpleModel = simpleImageModels[0];
 
+// Function to log user activity to a file
+async function logActivity(logEntry: object) {
+  try {
+    // In a serverless environment, you can only write to the /tmp directory
+    const logFilePath = path.join('/tmp', 'telegram_log.jsonl');
+    const logLine = JSON.stringify({ ...logEntry, timestamp: new Date().toISOString() }) + '\n';
+    await fs.appendFile(logFilePath, logLine);
+  } catch (error) {
+    console.error('Failed to write to log file:', error);
+    // Don't block the main flow if logging fails
+  }
+}
 
 export async function POST(req: NextRequest) {
   const botToken = "8354841529:AAHoH88pqVExG1AcQ6mi3KjA-HO5nlsBwq0";
@@ -35,8 +49,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const chatId = body.message.chat.id;
-    const text = body.message.text as string;
+    const { message } = body;
+    const { chat, text } = message;
+    const chatId = chat.id;
+
+    // Log the incoming message
+    await logActivity({
+      chatId: chat.id,
+      username: chat.username,
+      firstName: chat.first_name,
+      lastName: chat.last_name,
+      text: text,
+    });
 
     if (text.startsWith('/start') || text.startsWith('/help')) {
       const modelList = simpleImageModels.map(m => `- \`/${m}\``).join('\n');
