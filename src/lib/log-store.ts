@@ -1,6 +1,3 @@
-
-import fetch from 'node-fetch';
-
 // This is a free, anonymous bin from JSONBin.io.
 // It's a simple way to have a persistent data store without any setup.
 const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/669fddc0e41b4d34e4171348';
