@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Users, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Users, Image as ImageIcon, FileText } from "lucide-react";
 import { Icons } from "@/components/icons";
 
 interface LogEntry {
@@ -46,6 +46,8 @@ export default function AnalyticsPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rawLogs, setRawLogs] = useState('');
+  const [isRawLogsLoading, setIsRawLogsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchLogs() {
@@ -94,7 +96,25 @@ export default function AnalyticsPage() {
       }
     }
 
+    async function fetchRawLogs() {
+      setIsRawLogsLoading(true);
+      try {
+        const res = await fetch('/api/analytics/raw');
+        if (!res.ok) {
+          setRawLogs('Failed to load raw logs.');
+          return;
+        }
+        const text = await res.text();
+        setRawLogs(text || 'Log file is empty.');
+      } catch (e) {
+        setRawLogs('An error occurred while fetching raw logs.');
+      } finally {
+        setIsRawLogsLoading(false);
+      }
+    }
+
     fetchLogs();
+    fetchRawLogs();
   }, []);
   
   const renderStatsCards = () => {
@@ -225,6 +245,33 @@ export default function AnalyticsPage() {
       </Accordion>
     ));
   };
+  
+  const renderRawLogs = () => {
+    return (
+       <Card>
+         <CardHeader>
+           <CardTitle>Raw Log Data</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <Accordion type="single" collapsible className="w-full">
+             <AccordionItem value="raw-logs">
+               <AccordionTrigger className="text-sm font-semibold">
+                 <div className="flex items-center gap-2">
+                   <FileText className="h-4 w-4" />
+                   <span>View Raw Logs</span>
+                 </div>
+               </AccordionTrigger>
+               <AccordionContent>
+                 <pre className="mt-4 max-h-96 overflow-auto rounded-md bg-muted p-4 text-xs font-mono text-muted-foreground">
+                   {isRawLogsLoading ? <Skeleton className="h-24 w-full" /> : <code>{rawLogs}</code>}
+                 </pre>
+               </AccordionContent>
+             </AccordionItem>
+           </Accordion>
+         </CardContent>
+       </Card>
+    );
+  };
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background text-foreground">
@@ -252,6 +299,8 @@ export default function AnalyticsPage() {
               {renderTableBody()}
             </CardContent>
           </Card>
+
+          {renderRawLogs()}
         </div>
       </main>
     </div>
