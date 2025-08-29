@@ -149,95 +149,111 @@ export default function AnalyticsPage() {
 
   const renderTableBody = () => {
     if (isLoading) {
-      return Array.from({ length: 3 }).map((_, i) => (
-        <TableRow key={i}>
-          <TableCell colSpan={3}><Skeleton className="h-8 w-full" /></TableCell>
-        </TableRow>
-      ));
+      return (
+        <Table>
+          <TableBody>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell colSpan={3}>
+                  <Skeleton className="h-8 w-full" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
     }
-    
+
     if (error) {
-        return (
+      return (
+        <Table>
+          <TableBody>
             <TableRow>
-                <TableCell colSpan={3} className="text-center text-destructive">
-                    {error}
-                </TableCell>
+              <TableCell colSpan={3} className="text-center text-destructive">
+                {error}
+              </TableCell>
             </TableRow>
-        );
+          </TableBody>
+        </Table>
+      );
     }
-    
+
     if (analytics.length === 0) {
-        return (
+      return (
+        <Table>
+          <TableBody>
             <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground py-12">
-                    No bot activity has been logged yet.
-                </TableCell>
+              <TableCell colSpan={3} className="text-center text-muted-foreground py-12">
+                No bot activity has been logged yet.
+              </TableCell>
             </TableRow>
-        );
+          </TableBody>
+        </Table>
+      );
     }
-    
+
     return analytics.map((user) => (
-        <Accordion type="single" collapsible className="w-full" key={user.id}>
-            <AccordionItem value={`user-${user.id}`} className="border-b-0">
-                 <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell className="font-semibold w-1/3">{user.name}</TableCell>
-                            <TableCell className="font-semibold w-1/3">@{user.username}</TableCell>
-                            <TableCell className="font-semibold w-1/3 flex items-center justify-between">
-                                <span>{user.promptCount} Images</span>
-                                <AccordionTrigger className="p-0 hover:no-underline [&[data-state=open]>svg]:text-primary" />
-                            </TableCell>
-                        </TableRow>
-                    </TableHeader>
-                </Table>
-                <AccordionContent>
-                    <div className="border-t max-h-60 overflow-y-auto">
-                        <Table>
-                            <TableBody>
-                                {user.prompts.map((p, i) => (
-                                    <TableRow key={i} className="bg-muted/10">
-                                        <TableCell className="text-muted-foreground truncate max-w-sm">{p.text}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">{new Date(p.timestamp).toLocaleString()}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+      <Accordion type="single" collapsible className="w-full" key={user.id}>
+        <AccordionItem value={`user-${user.id}`} className="border-b-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/50">
+                <TableCell className="font-semibold w-1/3">{user.name}</TableCell>
+                <TableCell className="font-semibold w-1/3">@{user.username}</TableCell>
+                <TableCell className="font-semibold w-1/3 flex items-center justify-between">
+                  <span>{user.promptCount} Images</span>
+                  <AccordionTrigger className="p-0 hover:no-underline [&[data-state=open]>svg]:text-primary" />
+                </TableCell>
+              </TableRow>
+            </TableHeader>
+          </Table>
+          <AccordionContent>
+            <div className="border-t max-h-60 overflow-y-auto">
+              <Table>
+                <TableBody>
+                  {user.prompts.map((p, i) => (
+                    <TableRow key={i} className="bg-muted/10">
+                      <TableCell className="text-muted-foreground truncate max-w-sm">{p.text}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{new Date(p.timestamp).toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     ));
-  }
+  };
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background text-foreground">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 md:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold" prefetch={false}>
-                <Icons.logo className="h-6 w-6 text-primary" />
-                <span className="text-lg font-headline">TeleImage Analytics</span>
-            </Link>
-            <Button asChild variant="outline">
-                <Link href="/">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Home
-                </Link>
-            </Button>
-        </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="container mx-auto space-y-6">
-                {renderStatsCards()}
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>User Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                         {renderTableBody()}
-                    </CardContent>
-                </Card>
-            </div>
-        </main>
+      <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold" prefetch={false}>
+          <Icons.logo className="h-6 w-6 text-primary" />
+          <span className="text-lg font-headline">TeleImage Analytics</span>
+        </Link>
+        <Button asChild variant="outline">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </header>
+      <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="container mx-auto space-y-6">
+          {renderStatsCards()}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>User Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {renderTableBody()}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
