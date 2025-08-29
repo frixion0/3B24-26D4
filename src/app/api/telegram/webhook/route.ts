@@ -2,8 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/ai/flows/generate-image-from-telegram-prompt';
 import { sendMessage, sendPhoto } from '@/lib/telegram';
-import fs from 'fs/promises';
-import path from 'path';
+import { appendLog } from '@/lib/log-store';
 
 export const runtime = 'nodejs';
 // Increase timeout for image generation
@@ -21,15 +20,12 @@ const imageModelMap: Record<string, string> = {
 const simpleImageModels = Object.keys(imageModelMap);
 const defaultSimpleModel = simpleImageModels[0];
 
-// Function to log user activity to a file
+// Function to log user activity
 async function logActivity(logEntry: object) {
   try {
-    // In a serverless environment, you can only write to the /tmp directory
-    const logFilePath = path.join('/tmp', 'telegram_log.jsonl');
-    const logLine = JSON.stringify({ ...logEntry, timestamp: new Date().toISOString() }) + '\n';
-    await fs.appendFile(logFilePath, logLine);
+    await appendLog({ ...logEntry, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Failed to write to log file:', error);
+    console.error('Failed to write to log store:', error);
     // Don't block the main flow if logging fails
   }
 }
