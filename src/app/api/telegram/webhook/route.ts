@@ -90,13 +90,17 @@ Let your imagination run wild! What would you like to create first?
           const command = commandMatch[1];
           const potentialPrompt = commandMatch[2];
 
-          if (simpleImageModels.includes(command)) {
+          if (simpleImageModels.includes(command) && potentialPrompt && potentialPrompt.trim()) {
               model = imageModelMap[command];
-              prompt = potentialPrompt;
+              prompt = potentialPrompt.trim();
+          } else {
+             prompt = text.trim();
           }
+      } else {
+        prompt = text.trim();
       }
       
-      if (!prompt || !prompt.trim()) {
+      if (!prompt) {
         await sendMessage(chatId, 'Please provide a prompt after the command.');
         return NextResponse.json({ ok: true });
       }

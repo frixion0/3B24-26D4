@@ -4,6 +4,8 @@ import fs from 'fs/promises';
 import path from 'path';
 
 export const runtime = 'nodejs';
+// This line is crucial to prevent Next.js from caching the response.
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const logFilePath = path.join('/tmp', 'telegram_log.jsonl');
