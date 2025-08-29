@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "./ui/label";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, BarChart } from "lucide-react";
 
 interface WebhookStatus {
   ok: boolean;
@@ -270,12 +270,20 @@ export function LandingPage() {
           <Icons.logo className="h-6 w-6 text-primary" />
           <span className="text-lg font-headline">TeleImage</span>
         </Link>
-        <Button asChild>
-          <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
-            <Icons.send className="mr-2 h-4 w-4" />
-            Open in Telegram
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/analytics">
+              <BarChart className="mr-2 h-4 w-4" />
+              Analytics
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
+              <Icons.send className="mr-2 h-4 w-4" />
+              Open in Telegram
+            </Link>
+          </Button>
+        </div>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
