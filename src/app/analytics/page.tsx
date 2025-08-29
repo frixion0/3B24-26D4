@@ -12,9 +12,15 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users, Image as ImageIcon } from "lucide-react";
 import { Icons } from "@/components/icons";
 
 interface LogEntry {
@@ -26,8 +32,18 @@ interface LogEntry {
   timestamp: string;
 }
 
+interface UserAnalytics {
+  id: number;
+  name: string;
+  username: string;
+  promptCount: number;
+  prompts: { text: string; timestamp: string }[];
+}
+
 export default function AnalyticsPage() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [analytics, setAnalytics] = useState<UserAnalytics[]>([]);
+  const [totalPrompts, setTotalPrompts] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +56,37 @@ export default function AnalyticsPage() {
         if (!response.ok) {
           throw new Error("Failed to fetch analytics data.");
         }
-        const data = await response.json();
-        setLogs(data);
+        const logs: LogEntry[] = await response.json();
+
+        if (logs.length === 0) {
+            setAnalytics([]);
+            setTotalPrompts(0);
+            setTotalUsers(0);
+            setIsLoading(false);
+            return;
+        }
+
+        const userMap: { [key: number]: UserAnalytics } = {};
+        logs.forEach(log => {
+            if (!userMap[log.chatId]) {
+                userMap[log.chatId] = {
+                    id: log.chatId,
+                    name: `${log.firstName || ''} ${log.lastName || ''}`.trim(),
+                    username: log.username || 'N/A',
+                    promptCount: 0,
+                    prompts: []
+                };
+            }
+            userMap[log.chatId].promptCount++;
+            userMap[log.chatId].prompts.push({ text: log.text, timestamp: log.timestamp });
+        });
+
+        const sortedAnalytics = Object.values(userMap).sort((a, b) => b.promptCount - a.promptCount);
+        
+        setAnalytics(sortedAnalytics);
+        setTotalPrompts(logs.length);
+        setTotalUsers(Object.keys(userMap).length);
+
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred.");
       } finally {
@@ -52,14 +97,61 @@ export default function AnalyticsPage() {
     fetchLogs();
   }, []);
   
+  const renderStatsCards = () => {
+    if (isLoading) {
+        return (
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Images Generated</CardTitle>
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-1/4" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-1/4" />
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    return (
+        <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Images Generated</CardTitle>
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalPrompts}</div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalUsers}</div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
   const renderTableBody = () => {
     if (isLoading) {
-      return Array.from({ length: 5 }).map((_, i) => (
+      return Array.from({ length: 3 }).map((_, i) => (
         <TableRow key={i}>
-          <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+          <TableCell colSpan={3}><Skeleton className="h-8 w-full" /></TableCell>
         </TableRow>
       ));
     }
@@ -67,30 +159,54 @@ export default function AnalyticsPage() {
     if (error) {
         return (
             <TableRow>
-                <TableCell colSpan={4} className="text-center text-destructive">
+                <TableCell colSpan={3} className="text-center text-destructive">
                     {error}
                 </TableCell>
             </TableRow>
         );
     }
     
-    if (logs.length === 0) {
+    if (analytics.length === 0) {
         return (
             <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-12">
                     No bot activity has been logged yet.
                 </TableCell>
             </TableRow>
         );
     }
     
-    return logs.map((log) => (
-      <TableRow key={log.timestamp + log.chatId}>
-        <TableCell>{log.firstName || ''} {log.lastName || ''}</TableCell>
-        <TableCell>@{log.username || 'N/A'}</TableCell>
-        <TableCell className="max-w-[300px] truncate">{log.text}</TableCell>
-        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-      </TableRow>
+    return analytics.map((user) => (
+        <Accordion type="single" collapsible className="w-full" key={user.id}>
+            <AccordionItem value={`user-${user.id}`} className="border-b-0">
+                 <Table>
+                    <TableHeader>
+                        <TableRow className="bg-muted/30 hover:bg-muted/50">
+                            <TableCell className="font-semibold w-1/3">{user.name}</TableCell>
+                            <TableCell className="font-semibold w-1/3">@{user.username}</TableCell>
+                            <TableCell className="font-semibold w-1/3 flex items-center justify-between">
+                                <span>{user.promptCount} Images</span>
+                                <AccordionTrigger className="p-0 hover:no-underline [&[data-state=open]>svg]:text-primary" />
+                            </TableCell>
+                        </TableRow>
+                    </TableHeader>
+                </Table>
+                <AccordionContent>
+                    <div className="border-t max-h-60 overflow-y-auto">
+                        <Table>
+                            <TableBody>
+                                {user.prompts.map((p, i) => (
+                                    <TableRow key={i} className="bg-muted/10">
+                                        <TableCell className="text-muted-foreground truncate max-w-sm">{p.text}</TableCell>
+                                        <TableCell className="text-right text-muted-foreground">{new Date(p.timestamp).toLocaleString()}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     ));
   }
 
@@ -109,25 +225,15 @@ export default function AnalyticsPage() {
             </Button>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="container mx-auto">
+            <div className="container mx-auto space-y-6">
+                {renderStatsCards()}
+                
                 <Card>
                     <CardHeader>
-                        <CardTitle>Bot Usage Analytics</CardTitle>
+                        <CardTitle>User Activity</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Username</TableHead>
-                                    <TableHead>Prompt</TableHead>
-                                    <TableHead>Timestamp</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {renderTableBody()}
-                            </TableBody>
-                        </Table>
+                    <CardContent className="p-0">
+                         {renderTableBody()}
                     </CardContent>
                 </Card>
             </div>

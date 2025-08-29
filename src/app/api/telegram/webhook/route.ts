@@ -53,15 +53,6 @@ export async function POST(req: NextRequest) {
     const { chat, text } = message;
     const chatId = chat.id;
 
-    // Log the incoming message
-    await logActivity({
-      chatId: chat.id,
-      username: chat.username,
-      firstName: chat.first_name,
-      lastName: chat.last_name,
-      text: text,
-    });
-
     if (text.startsWith('/start') || text.startsWith('/help')) {
       const modelList = simpleImageModels.map(m => `- \`/${m}\``).join('\n');
       const welcomeMessage = `
@@ -109,9 +100,18 @@ Let your imagination run wild! What would you like to create first?
         await sendMessage(chatId, 'Please provide a prompt after the command.');
         return NextResponse.json({ ok: true });
       }
+
+      // Log the processed prompt
+      await logActivity({
+        chatId: chat.id,
+        username: chat.username,
+        firstName: chat.first_name,
+        lastName: chat.last_name,
+        text: prompt, // Log the cleaned prompt
+      });
       
       const { imageDataUri } = await generateImage({ prompt, model });
-      await sendPhoto(chatId, imageDataUri, `Here is your image for: "${text}"`);
+      await sendPhoto(chatId, imageDataUri, `Here is your image for: "${prompt}"`);
     } catch (error) {
       console.error('Error in bot image generation/sending:', error);
       // Ensure a user-facing error is sent on failure
