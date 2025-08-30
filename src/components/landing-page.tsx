@@ -43,6 +43,7 @@ interface DbStatus {
 
 const imageModels = [
   'provider-3/FLUX.1-dev',
+  'provider-2/flux.1-dev',
   'provider-4/qwen-image',
   'provider-4/imagen-3',
   'provider-4/imagen-4',

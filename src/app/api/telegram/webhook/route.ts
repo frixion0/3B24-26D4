@@ -10,6 +10,7 @@ export const maxDuration = 120;
 
 const imageModelMap: Record<string, string> = {
     'flux': 'provider-3/FLUX.1-dev',
+    'flux2': 'provider-2/flux.1-dev',
     'qwen': 'provider-4/qwen-image',
     'imagen3': 'provider-4/imagen-3',
     'imagen4': 'provider-4/imagen-4',
