@@ -19,7 +19,7 @@ const imageModelMap: Record<string, string> = {
 };
 
 const simpleImageModels = Object.keys(imageModelMap);
-const defaultSimpleModel = simpleImageModels[0];
+const defaultSimpleModel = 'flux2';
 
 // Function to log user activity
 async function logActivity(logEntry: object) {

@@ -55,7 +55,7 @@ const imageModels = [
 export function LandingPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [prompt, setPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState(imageModels[0]);
+  const [selectedModel, setSelectedModel] = useState(imageModels[1]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
