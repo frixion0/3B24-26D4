@@ -9,7 +9,7 @@ if (!BOT_TOKEN) {
 }
 
 function appendLinks(text: string): string {
-    return `${text}\n\n[Community](${COMMUNITY_LINK}) • [Bot](${BOT_LINK}) • [Website](${WEBSITE_LINK})`;
+    return `${text}\n\n[Community](${COMMUNITY_LINK}) • [Image Editor Bot](${BOT_LINK}) • [Website](${WEBSITE_LINK})`;
 }
 
 export async function sendMessage(chatId: number, text: string): Promise<Response> {
