@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "./ui/label";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, BarChart, Database } from "lucide-react";
 
 interface WebhookStatus {
   ok: boolean;
@@ -33,6 +33,12 @@ interface WebhookStatus {
   max_connections?: number;
   ip_address?: string;
   expected_url: string;
+}
+
+interface DbStatus {
+    ok: boolean;
+    message?: string;
+    error?: string;
 }
 
 const imageModels = [
@@ -58,10 +64,13 @@ export function LandingPage() {
   const [isDeletingWebhook, setIsDeletingWebhook] = useState(false);
   const [webhookBaseUrl, setWebhookBaseUrl] = useState("https://3-b24-26-d4.vercel.app");
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
+  const [isDbStatusLoading, setIsDbStatusLoading] = useState(true);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
     fetchWebhookStatus();
+    fetchDbStatus();
   }, []);
   
   const fetchWebhookStatus = async () => {
@@ -83,6 +92,20 @@ export function LandingPage() {
       setWebhookStatus(null);
     } finally {
       setIsStatusLoading(false);
+    }
+  };
+  
+  const fetchDbStatus = async () => {
+    setIsDbStatusLoading(true);
+    try {
+      const response = await fetch('/api/database-status');
+      const data = await response.json();
+      setDbStatus(data);
+    } catch (error) {
+      console.error("Error fetching database status:", error);
+      setDbStatus({ ok: false, error: 'An unexpected error occurred.' });
+    } finally {
+      setIsDbStatusLoading(false);
     }
   };
 
@@ -261,6 +284,35 @@ export function LandingPage() {
 
     return null;
   };
+  
+  const renderDbStatus = () => {
+    if (isDbStatusLoading) {
+        return (
+             <div className="flex items-center space-x-4">
+                <Skeleton className="h-8 w-8" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-[200px]" />
+                </div>
+            </div>
+        )
+    }
+
+    if (dbStatus?.ok) {
+        return (
+             <div className="flex items-center gap-4 text-green-500">
+                <Database className="h-6 w-6" />
+                <p className="font-medium">{dbStatus.message}</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex items-center gap-4 text-destructive">
+            <Database className="h-6 w-6" />
+            <p className="font-medium">{dbStatus?.error || 'An unknown error occurred'}</p>
+        </div>
+    )
+  }
 
 
   return (
@@ -270,12 +322,20 @@ export function LandingPage() {
           <Icons.logo className="h-6 w-6 text-primary" />
           <span className="text-lg font-headline">TeleImage</span>
         </Link>
-        <Button asChild>
-          <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
-            <Icons.send className="mr-2 h-4 w-4" />
-            Open in Telegram
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/analytics">
+              <BarChart className="mr-2 h-4 w-4" />
+              Analytics
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="https://t.me/fb_studio_test_bot" target="_blank" rel="noopener noreferrer">
+              <Icons.send className="mr-2 h-4 w-4" />
+              Open in Telegram
+            </Link>
+          </Button>
+        </div>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
@@ -436,14 +496,22 @@ export function LandingPage() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Telegram Bot Status
+                  Bot Admin Panel
                 </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Check if the Telegram bot is correctly configured and connected.
+                  Check if the Telegram bot and database are correctly configured and connected.
                 </p>
               </div>
             </div>
-            <div className="mx-auto mt-8 max-w-2xl">
+            <div className="mx-auto mt-8 grid max-w-2xl gap-4 md:grid-cols-2 md:max-w-4xl">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Database Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      {renderDbStatus()}
+                  </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                     <CardTitle>Webhook Configuration</CardTitle>
