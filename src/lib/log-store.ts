@@ -1,4 +1,6 @@
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
+
+const redisUrl = "redis://default:VU0EYlurxIV54I1RUDz4aqlRp78dHfUu@redis-17968.c83.us-east-1-2.ec2.redns.redis-cloud.com:17968";
 
 const LOG_KEY = 'telegram_logs';
 
@@ -11,35 +13,36 @@ interface LogEntry {
   timestamp: string;
 }
 
-export async function getLogs(): Promise<LogEntry[]> {
+export async function appendLog(logEntry: object): Promise<void> {
+  const client = createClient({ url: redisUrl });
   try {
-    const logs = await kv.get<LogEntry[]>(LOG_KEY);
+    await client.connect();
+    await client.lPush(LOG_KEY, JSON.stringify(logEntry));
+  } catch (error) {
+    console.error('Error appending log to Redis:', error);
+    // We don't re-throw here because logging shouldn't crash the main application flow.
+  } finally {
+    if (client.isOpen) {
+      await client.disconnect();
+    }
+  }
+}
+
+export async function getAllLogsFromList(): Promise<LogEntry[]> {
+  const client = createClient({ url: redisUrl });
+  try {
+    await client.connect();
+    // lrange(key, 0, -1) fetches all items from the list.
+    const logStrings = await client.lRange(LOG_KEY, 0, -1);
+    // The logs are stored as strings, so we need to parse them back into objects.
+    const logs = logStrings.map(log => JSON.parse(log));
     return logs || [];
   } catch (error) {
-    console.error('Error getting logs from Vercel KV:', error);
-    return []; // Return empty on error to prevent crashing the analytics page.
-  }
-}
-
-export async function appendLog(logEntry: object): Promise<void> {
-  try {
-    // Vercel KV doesn't have a direct append, so we use a list (lpush)
-    // This is more efficient than getting and setting the whole array.
-    await kv.lpush(LOG_KEY, logEntry);
-  } catch (error) {
-    console.error('Error appending log to Vercel KV:', error);
-    // We don't re-throw here because logging shouldn't crash the main application flow.
-  }
-}
-
-// We also need a way to read the list for the analytics page.
-export async function getAllLogsFromList(): Promise<LogEntry[]> {
-    try {
-        // lrange(key, 0, -1) fetches all items from the list.
-        const logs = await kv.lrange<LogEntry>(LOG_KEY, 0, -1);
-        return logs || [];
-    } catch (error) {
-        console.error('Error getting logs from Vercel KV list:', error);
-        return [];
+    console.error('Error getting logs from Redis list:', error);
+    return [];
+  } finally {
+     if (client.isOpen) {
+      await client.disconnect();
     }
+  }
 }
