@@ -2,14 +2,14 @@ const BOT_TOKEN = "8354841529:AAHoH88pqVExG1AcQ6mi3KjA-HO5nlsBwq0";
 const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBSITE_LINK = 'https://neural-canvas-seven.vercel.app/';
 const COMMUNITY_LINK = 'https://t.me/NeuralCanvascommunity';
-const BOT_USERNAME = '@Ai_Neural_Canvas_editor_bot';
+const BOT_LINK = 't.me/Ai_Neural_Canvas_editor_bot';
 
 if (!BOT_TOKEN) {
   console.warn("TELEGRAM_BOT_TOKEN is not set. The Telegram bot will not work.");
 }
 
 function appendLinks(text: string): string {
-    return `${text}\n\nJoin our community: ${COMMUNITY_LINK}\n${BOT_USERNAME}\n${WEBSITE_LINK}`;
+    return `${text}\n\n[Community](${COMMUNITY_LINK}) • [Bot](${BOT_LINK}) • [Website](${WEBSITE_LINK})`;
 }
 
 export async function sendMessage(chatId: number, text: string): Promise<Response> {
@@ -53,6 +53,8 @@ export async function sendPhoto(chatId: number, imageDataUri: string, caption: s
   formData.append('chat_id', String(chatId));
   formData.append('photo', new Blob([buffer], { type: mimeType }), 'image.png');
   formData.append('caption', appendLinks(caption));
+  // Caption also needs parse_mode to render the link
+  formData.append('parse_mode', 'Markdown');
 
   const response = await fetch(url, {
     method: 'POST',
